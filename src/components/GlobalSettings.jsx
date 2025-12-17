@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const GlobalSettings = () => {
   const [settings, setSettings] = useState({
     numDayOrders: 5,
     hoursPerDay: 6,
-    breakHours: []
+    breakHours: [],
   });
+  const [breakHoursInput, setBreakHoursInput] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -16,6 +17,7 @@ const GlobalSettings = () => {
     const result = await window.api.getGlobalSettings();
     if (result.success && result.data) {
       setSettings(result.data);
+      setBreakHoursInput(result.data.breakHours.join(","));
     }
   };
 
@@ -25,24 +27,31 @@ const GlobalSettings = () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } else {
-      alert('Error saving settings: ' + result.error);
+      alert("Error saving settings: " + result.error);
     }
   };
 
   const handleBreakHoursChange = (e) => {
     const value = e.target.value;
-    if (value === '') {
+    setBreakHoursInput(value);
+
+    if (value === "") {
       setSettings({ ...settings, breakHours: [] });
       return;
     }
-    const hours = value.split(',').map(h => parseInt(h.trim())).filter(h => !isNaN(h));
+    const hours = value
+      .split(",")
+      .map((h) => parseInt(h.trim()))
+      .filter((h) => !isNaN(h));
     setSettings({ ...settings, breakHours: hours });
   };
 
   return (
     <div className="panel">
       <h2>⚙️ Global Settings</h2>
-      <p className="description">Configure the basic parameters for timetable generation</p>
+      <p className="description">
+        Configure the basic parameters for timetable generation
+      </p>
 
       <div className="form-section">
         <div className="form-group">
@@ -52,7 +61,12 @@ const GlobalSettings = () => {
             min="1"
             max="10"
             value={settings.numDayOrders}
-            onChange={(e) => setSettings({ ...settings, numDayOrders: parseInt(e.target.value) })}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                numDayOrders: parseInt(e.target.value),
+              })
+            }
             className="input"
           />
           <small>Example: 5 (Day 1, Day 2, Day 3, Day 4, Day 5)</small>
@@ -65,7 +79,12 @@ const GlobalSettings = () => {
             min="1"
             max="12"
             value={settings.hoursPerDay}
-            onChange={(e) => setSettings({ ...settings, hoursPerDay: parseInt(e.target.value) })}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                hoursPerDay: parseInt(e.target.value),
+              })
+            }
             className="input"
           />
           <small>Total teaching hours including breaks</small>
@@ -76,7 +95,7 @@ const GlobalSettings = () => {
           <input
             type="text"
             placeholder="e.g., 3,4 for breaks at hour 3 and 4"
-            value={settings.breakHours.join(', ')}
+            value={breakHoursInput}
             onChange={handleBreakHoursChange}
             className="input"
           />
@@ -87,7 +106,9 @@ const GlobalSettings = () => {
           💾 Save Settings
         </button>
 
-        {saved && <div className="success-message">✅ Settings saved successfully!</div>}
+        {saved && (
+          <div className="success-message">✅ Settings saved successfully!</div>
+        )}
       </div>
     </div>
   );

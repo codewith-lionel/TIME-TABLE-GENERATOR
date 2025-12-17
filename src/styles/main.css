@@ -6,8 +6,8 @@
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: #333;
   min-height: 100vh;
 }
@@ -28,7 +28,7 @@ body {
 
 .app-header h1 {
   font-size: 2rem;
-  color: #667eea;
+  color: #1e3c72;
   margin-bottom: 0.5rem;
 }
 
@@ -76,9 +76,9 @@ body {
 }
 
 .nav-button.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
-  border-color: #667eea;
+  border-color: #1e3c72;
 }
 
 .nav-icon {
@@ -118,7 +118,7 @@ body {
 
 .panel h2 {
   font-size: 1.75rem;
-  color: #667eea;
+  color: #1e3c72;
   margin-bottom: 0.5rem;
 }
 
@@ -165,7 +165,7 @@ body {
 
 .input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #2a5298;
 }
 
 .input-group {
@@ -243,7 +243,7 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
 }
 
@@ -306,7 +306,7 @@ body {
 }
 
 .list-item:hover {
-  border-color: #667eea;
+  border-color: #2a5298;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -327,7 +327,7 @@ body {
 }
 
 .table th {
-  background: #667eea;
+  background: #1e3c72;
   color: white;
   padding: 1rem;
   text-align: left;
@@ -417,7 +417,7 @@ body {
 }
 
 .class-heading {
-  color: #667eea;
+  color: #1e3c72;
   margin-bottom: 1rem;
 }
 
@@ -470,7 +470,7 @@ body {
 }
 
 .stats-panel {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
   padding: 1.5rem;
   border-radius: 8px;
@@ -529,7 +529,7 @@ body {
 }
 
 .timetable .header-cell {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   color: white;
   padding: 1rem;
   text-align: center;
@@ -574,7 +574,7 @@ body {
 }
 
 .timetable-cell.filled-cell {
-  background: #e3f2fd;
+  background: #e8eef7;
 }
 
 .timetable-cell.priority-high {
@@ -626,7 +626,7 @@ body {
 }
 
 .workload-card:hover {
-  border-color: #667eea;
+  border-color: #2a5298;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -640,7 +640,7 @@ body {
 }
 
 .workload-header h3 {
-  color: #667eea;
+  color: #1e3c72;
   font-size: 1.25rem;
 }
 
@@ -737,8 +737,8 @@ body {
 }
 
 .subject-tag {
-  background: #e3f2fd;
-  color: #667eea;
+  background: #e8eef7;
+  color: #1e3c72;
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -758,7 +758,7 @@ body {
 }
 
 .summary-section h3 {
-  color: #667eea;
+  color: #1e3c72;
   margin-bottom: 1rem;
 }
 
