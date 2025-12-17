@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const TeacherManagement = () => {
   const [teachers, setTeachers] = useState([]);
   const [formData, setFormData] = useState({
-    name: '',
+    name: "",
     maxHoursPerDay: 5,
     preferredDayOrders: [],
     preferredTimeSlots: {
       morning: false,
       afternoon: false,
-      specific: []
-    }
+      specific: [],
+    },
   });
   const [showForm, setShowForm] = useState(false);
 
@@ -27,27 +27,27 @@ const TeacherManagement = () => {
 
   const handleAdd = async () => {
     if (!formData.name.trim()) {
-      alert('Please enter teacher name');
+      alert("Please enter teacher name");
       return;
     }
 
     const result = await window.api.saveTeacher(formData);
     if (result.success) {
       setFormData({
-        name: '',
+        name: "",
         maxHoursPerDay: 5,
         preferredDayOrders: [],
-        preferredTimeSlots: { morning: false, afternoon: false, specific: [] }
+        preferredTimeSlots: { morning: false, afternoon: false, specific: [] },
       });
       setShowForm(false);
       loadTeachers();
     } else {
-      alert('Error adding teacher: ' + result.error);
+      alert("Error adding teacher: " + result.error);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this teacher?')) {
+    if (!confirm("Delete this teacher?")) {
       return;
     }
 
@@ -55,7 +55,7 @@ const TeacherManagement = () => {
     if (result.success) {
       loadTeachers();
     } else {
-      alert('Error deleting teacher: ' + result.error);
+      alert("Error deleting teacher: " + result.error);
     }
   };
 
@@ -73,26 +73,38 @@ const TeacherManagement = () => {
   const formatPreferences = (teacher) => {
     const prefs = [];
     if (teacher.preferredDayOrders && teacher.preferredDayOrders.length > 0) {
-      prefs.push(`Days: ${teacher.preferredDayOrders.join(', ')}`);
+      prefs.push(`Days: ${teacher.preferredDayOrders.join(", ")}`);
     }
     if (teacher.preferredTimeSlots) {
-      if (teacher.preferredTimeSlots.morning) prefs.push('Morning');
-      if (teacher.preferredTimeSlots.afternoon) prefs.push('Afternoon');
+      if (teacher.preferredTimeSlots.morning) prefs.push("Morning");
+      if (teacher.preferredTimeSlots.afternoon) prefs.push("Afternoon");
     }
-    return prefs.length > 0 ? prefs.join(' | ') : 'No preferences';
+    return prefs.length > 0 ? prefs.join(" | ") : "No preferences";
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      name: "",
+      maxHoursPerDay: 5,
+      preferredDayOrders: [],
+      preferredTimeSlots: { morning: false, afternoon: false, specific: [] },
+    });
+    setShowForm(false);
   };
 
   return (
     <div className="panel">
       <h2>👨‍🏫 Teacher Management</h2>
-      <p className="description">Manage teachers with their constraints and preferences</p>
+      <p className="description">
+        Manage teachers with their constraints and preferences
+      </p>
 
       <div className="form-section">
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => (showForm ? handleCancel() : setShowForm(true))}
           className="btn btn-primary"
         >
-          {showForm ? '❌ Cancel' : '➕ Add Teacher'}
+          {showForm ? "❌ Cancel" : "➕ Add Teacher"}
         </button>
 
         {showForm && (
@@ -103,7 +115,9 @@ const TeacherManagement = () => {
                 type="text"
                 placeholder="e.g., Dr. John Smith"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="input"
               />
             </div>
@@ -115,7 +129,12 @@ const TeacherManagement = () => {
                 min="1"
                 max="12"
                 value={formData.maxHoursPerDay}
-                onChange={(e) => setFormData({ ...formData, maxHoursPerDay: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    maxHoursPerDay: parseInt(e.target.value),
+                  })
+                }
                 className="input"
               />
               <small>Hard constraint - teacher cannot exceed this limit</small>
@@ -124,7 +143,7 @@ const TeacherManagement = () => {
             <div className="form-group">
               <label>Preferred Day Orders (Optional)</label>
               <div className="checkbox-group">
-                {[1, 2, 3, 4, 5].map(day => (
+                {[1, 2, 3, 4, 5].map((day) => (
                   <label key={day} className="checkbox-label">
                     <input
                       type="checkbox"
@@ -145,10 +164,15 @@ const TeacherManagement = () => {
                   <input
                     type="checkbox"
                     checked={formData.preferredTimeSlots.morning}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      preferredTimeSlots: { ...formData.preferredTimeSlots, morning: e.target.checked }
-                    })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        preferredTimeSlots: {
+                          ...formData.preferredTimeSlots,
+                          morning: e.target.checked,
+                        },
+                      })
+                    }
                   />
                   Morning
                 </label>
@@ -156,10 +180,15 @@ const TeacherManagement = () => {
                   <input
                     type="checkbox"
                     checked={formData.preferredTimeSlots.afternoon}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      preferredTimeSlots: { ...formData.preferredTimeSlots, afternoon: e.target.checked }
-                    })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        preferredTimeSlots: {
+                          ...formData.preferredTimeSlots,
+                          afternoon: e.target.checked,
+                        },
+                      })
+                    }
                   />
                   Afternoon
                 </label>
@@ -190,11 +219,15 @@ const TeacherManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {teachers.map(teacher => (
+                {teachers.map((teacher) => (
                   <tr key={teacher.id}>
-                    <td><strong>{teacher.name}</strong></td>
+                    <td>
+                      <strong>{teacher.name}</strong>
+                    </td>
                     <td>{teacher.max_hours_per_day}</td>
-                    <td><small>{formatPreferences(teacher)}</small></td>
+                    <td>
+                      <small>{formatPreferences(teacher)}</small>
+                    </td>
                     <td>
                       <button
                         onClick={() => handleDelete(teacher.id)}

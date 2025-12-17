@@ -1,10 +1,10 @@
 /**
  * Advanced Timetable Generator with Constraint-Based Scheduling
- * 
+ *
  * This class implements a sophisticated algorithm for generating timetables
  * across multiple classes while respecting all hard constraints and optimizing
  * for soft constraints (preferences).
- * 
+ *
  * ALGORITHM OVERVIEW:
  * 1. Initialize global teacher availability matrix
  * 2. Sort subjects by priority (HIGH -> MEDIUM -> LOW)
@@ -30,17 +30,23 @@ class TimetableGenerator {
       // 1. Load all required data
       const settings = this.dbService.getGlobalSettings();
       if (!settings) {
-        return { success: false, error: 'Please configure global settings first' };
+        return {
+          success: false,
+          error: "Please configure global settings first",
+        };
       }
 
       const classes = this.dbService.getClasses();
       if (classes.length === 0) {
-        return { success: false, error: 'Please add at least one class' };
+        return { success: false, error: "Please add at least one class" };
       }
 
       const allocations = this.dbService.getAllocations();
       if (allocations.length === 0) {
-        return { success: false, error: 'Please allocate teachers to subjects' };
+        return {
+          success: false,
+          error: "Please allocate teachers to subjects",
+        };
       }
 
       const teachers = this.dbService.getTeachers();
@@ -50,17 +56,17 @@ class TimetableGenerator {
       this.classes = classes;
       this.allocations = allocations;
       this.teachers = teachers;
-      this.teacherMap = new Map(teachers.map(t => [t.id, t]));
-      
+      this.teacherMap = new Map(teachers.map((t) => [t.id, t]));
+
       // Teacher availability matrix: [teacherId][dayOrder][hour] = true/false
       this.teacherAvailability = this.initializeAvailabilityMatrix();
-      
+
       // Teacher daily hour counters: [teacherId][dayOrder] = hourCount
       this.teacherDailyHours = this.initializeDailyHourCounters();
-      
+
       // Subject remaining hours: [allocationId] = remainingHours
       this.subjectRemainingHours = new Map(
-        allocations.map(a => [a.id, a.weekly_hours])
+        allocations.map((a) => [a.id, a.weekly_hours])
       );
 
       // Timetable structure: [classId][dayOrder][hour] = { subjectId, teacherId, allocationId }
@@ -71,7 +77,7 @@ class TimetableGenerator {
 
       // 4. Generate timetable using constraint-based scheduling
       const result = this.scheduleAllSubjects(sortedAllocations);
-      
+
       if (!result.success) {
         return result;
       }
@@ -85,9 +91,8 @@ class TimetableGenerator {
       return {
         success: true,
         timetable: timetableEntries,
-        stats: stats
+        stats: stats,
       };
-
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -99,7 +104,7 @@ class TimetableGenerator {
    */
   initializeAvailabilityMatrix() {
     const matrix = {};
-    this.teachers.forEach(teacher => {
+    this.teachers.forEach((teacher) => {
       matrix[teacher.id] = {};
       for (let day = 1; day <= this.settings.numDayOrders; day++) {
         matrix[teacher.id][day] = {};
@@ -118,7 +123,7 @@ class TimetableGenerator {
    */
   initializeDailyHourCounters() {
     const counters = {};
-    this.teachers.forEach(teacher => {
+    this.teachers.forEach((teacher) => {
       counters[teacher.id] = {};
       for (let day = 1; day <= this.settings.numDayOrders; day++) {
         counters[teacher.id][day] = 0;
@@ -132,7 +137,7 @@ class TimetableGenerator {
    */
   initializeTimetable() {
     const tt = {};
-    this.classes.forEach(cls => {
+    this.classes.forEach((cls) => {
       tt[cls.id] = {};
       for (let day = 1; day <= this.settings.numDayOrders; day++) {
         tt[cls.id][day] = {};
@@ -152,7 +157,7 @@ class TimetableGenerator {
    * Within same priority, sort by weekly hours (descending)
    */
   sortAllocationsByPriority(allocations) {
-    const priorityOrder = { 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+    const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 };
     return [...allocations].sort((a, b) => {
       if (a.priority !== b.priority) {
         return priorityOrder[a.priority] - priorityOrder[b.priority];
@@ -168,14 +173,14 @@ class TimetableGenerator {
     // Process each allocation and schedule all its required hours
     for (const allocation of sortedAllocations) {
       const remainingHours = this.subjectRemainingHours.get(allocation.id);
-      
+
       for (let i = 0; i < remainingHours; i++) {
         const slot = this.findBestSlot(allocation);
-        
+
         if (!slot) {
           return {
             success: false,
-            error: `Cannot schedule ${allocation.subject_name} for ${allocation.class_name}. No valid slot found.`
+            error: `Cannot schedule ${allocation.subject_name} for ${allocation.class_name}. No valid slot found.`,
           };
         }
 
@@ -189,6 +194,7 @@ class TimetableGenerator {
 
   /**
    * Find the best available slot for a subject considering all constraints
+   * Uses day shuffling to create varied patterns across different days
    */
   findBestSlot(allocation) {
     let bestSlot = null;
@@ -196,9 +202,17 @@ class TimetableGenerator {
 
     const teacher = this.teacherMap.get(allocation.teacher_id);
 
-    // Iterate through all possible slots
-    for (let day = 1; day <= this.settings.numDayOrders; day++) {
-      for (let hour = 1; hour <= this.settings.hoursPerDay; hour++) {
+    // Create shuffled day order to vary patterns
+    const dayOrders = this.shuffleArray(
+      Array.from({ length: this.settings.numDayOrders }, (_, i) => i + 1)
+    );
+
+    // Create varied hour order based on priority and randomization
+    const hourOrders = this.getVariedHourOrder(allocation.priority);
+
+    // Iterate through shuffled slots for pattern variation
+    for (const day of dayOrders) {
+      for (const hour of hourOrders) {
         // Skip break hours
         if (this.settings.breakHours.includes(hour)) {
           continue;
@@ -223,6 +237,52 @@ class TimetableGenerator {
   }
 
   /**
+   * Shuffle array using Fisher-Yates algorithm for randomization
+   */
+  shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  /**
+   * Get varied hour order based on priority and pattern variation
+   * Creates different scheduling patterns for each day
+   */
+  getVariedHourOrder(priority) {
+    const hours = Array.from(
+      { length: this.settings.hoursPerDay },
+      (_, i) => i + 1
+    );
+
+    // Different strategies for different priorities
+    if (priority === "HIGH") {
+      // HIGH priority: Mix of morning-first and shuffled
+      if (Math.random() > 0.5) {
+        return hours; // Sequential from morning
+      } else {
+        // Alternate between morning and afternoon
+        const mid = Math.floor(hours.length / 2);
+        const result = [];
+        for (let i = 0; i < mid; i++) {
+          result.push(hours[i]);
+          if (hours[mid + i]) result.push(hours[mid + i]);
+        }
+        return result;
+      }
+    } else if (priority === "MEDIUM") {
+      // MEDIUM priority: Shuffle for varied patterns
+      return this.shuffleArray(hours);
+    } else {
+      // LOW priority: Reverse or shuffle
+      return Math.random() > 0.5 ? hours.reverse() : this.shuffleArray(hours);
+    }
+  }
+
+  /**
    * Check if a slot satisfies all hard constraints
    */
   isSlotValid(allocation, day, hour) {
@@ -238,7 +298,10 @@ class TimetableGenerator {
 
     // 3. Check teacher daily hour limit
     const teacher = this.teacherMap.get(allocation.teacher_id);
-    if (this.teacherDailyHours[allocation.teacher_id][day] >= teacher.max_hours_per_day) {
+    if (
+      this.teacherDailyHours[allocation.teacher_id][day] >=
+      teacher.max_hours_per_day
+    ) {
       return false;
     }
 
@@ -247,45 +310,110 @@ class TimetableGenerator {
 
   /**
    * Calculate preference score for a slot (higher is better)
+   * Includes day-specific variations for diverse patterns
    */
   calculateSlotScore(allocation, teacher, day, hour) {
     let score = 0;
 
     // 1. Teacher preferred day orders (+50 points)
-    if (teacher.preferredDayOrders && teacher.preferredDayOrders.includes(day)) {
+    if (
+      teacher.preferredDayOrders &&
+      teacher.preferredDayOrders.includes(day)
+    ) {
       score += 50;
     }
 
     // 2. Teacher preferred time slots (+30 points)
     if (teacher.preferredTimeSlots) {
-      if (teacher.preferredTimeSlots.morning && hour <= Math.floor(this.settings.hoursPerDay / 2)) {
+      if (
+        teacher.preferredTimeSlots.morning &&
+        hour <= Math.floor(this.settings.hoursPerDay / 2)
+      ) {
         score += 30;
       }
-      if (teacher.preferredTimeSlots.afternoon && hour > Math.floor(this.settings.hoursPerDay / 2)) {
+      if (
+        teacher.preferredTimeSlots.afternoon &&
+        hour > Math.floor(this.settings.hoursPerDay / 2)
+      ) {
         score += 30;
       }
-      if (teacher.preferredTimeSlots.specific && teacher.preferredTimeSlots.specific.includes(hour)) {
+      if (
+        teacher.preferredTimeSlots.specific &&
+        teacher.preferredTimeSlots.specific.includes(hour)
+      ) {
         score += 40;
       }
     }
 
-    // 3. Priority-based scoring
+    // 3. Priority-based scoring with day variation
     // HIGH priority subjects prefer morning slots (+20 points)
-    if (allocation.priority === 'HIGH' && hour <= Math.floor(this.settings.hoursPerDay / 2)) {
+    if (
+      allocation.priority === "HIGH" &&
+      hour <= Math.floor(this.settings.hoursPerDay / 2)
+    ) {
       score += 20;
     }
 
-    // 4. Avoid consecutive slots for same subject (-10 points)
-    if (this.hasConsecutiveSlot(allocation.class_id, day, hour, allocation.subject_id)) {
-      score -= 10;
+    // 4. Avoid consecutive slots for same subject, but allow occasionally for variety
+    if (
+      this.hasConsecutiveSlot(
+        allocation.class_id,
+        day,
+        hour,
+        allocation.subject_id
+      )
+    ) {
+      score -= Math.random() > 0.3 ? 10 : 5; // Vary penalty
     }
 
-    // 5. Distribution bonus - prefer spreading across different days (+10 points)
-    if (!this.subjectScheduledOnDay(allocation.class_id, day, allocation.subject_id)) {
-      score += 10;
+    // 5. Distribution bonus - prefer spreading across different days (+15 points)
+    if (
+      !this.subjectScheduledOnDay(
+        allocation.class_id,
+        day,
+        allocation.subject_id
+      )
+    ) {
+      score += 15;
     }
+
+    // 6. Day-specific pattern variation (NEW)
+    // Create different patterns for different days
+    score += this.getDaySpecificBonus(day, hour, allocation);
+
+    // 7. Add small random factor for variation (+/- 5 points)
+    score += Math.random() * 10 - 5;
 
     return score;
+  }
+
+  /**
+   * Add day-specific bonuses to create varied patterns across days
+   */
+  getDaySpecificBonus(day, hour, allocation) {
+    let bonus = 0;
+    const mid = Math.floor(this.settings.hoursPerDay / 2);
+
+    // Different patterns for different days
+    switch (day % 5) {
+      case 1: // Day 1: Favor early hours
+        bonus = hour <= mid ? 15 : 5;
+        break;
+      case 2: // Day 2: Favor middle hours
+        bonus = hour > mid - 2 && hour < mid + 2 ? 15 : 5;
+        break;
+      case 3: // Day 3: Favor alternating pattern
+        bonus = hour % 2 === 0 ? 12 : 8;
+        break;
+      case 4: // Day 4: Favor later hours for variety
+        bonus = hour > mid ? 15 : 5;
+        break;
+      case 0: // Day 5: Balanced approach
+        bonus = 10;
+        break;
+    }
+
+    return bonus;
   }
 
   /**
@@ -301,7 +429,10 @@ class TimetableGenerator {
       }
     }
 
-    if (nextHour <= this.settings.hoursPerDay && this.timetable[classId][day][nextHour]) {
+    if (
+      nextHour <= this.settings.hoursPerDay &&
+      this.timetable[classId][day][nextHour]
+    ) {
       if (this.timetable[classId][day][nextHour].subjectId === subjectId) {
         return true;
       }
@@ -315,8 +446,10 @@ class TimetableGenerator {
    */
   subjectScheduledOnDay(classId, day, subjectId) {
     for (let hour = 1; hour <= this.settings.hoursPerDay; hour++) {
-      if (this.timetable[classId][day][hour] && 
-          this.timetable[classId][day][hour].subjectId === subjectId) {
+      if (
+        this.timetable[classId][day][hour] &&
+        this.timetable[classId][day][hour].subjectId === subjectId
+      ) {
         return true;
       }
     }
@@ -333,7 +466,7 @@ class TimetableGenerator {
     this.timetable[allocation.class_id][day][hour] = {
       subjectId: allocation.subject_id,
       teacherId: allocation.teacher_id,
-      allocationId: allocation.id
+      allocationId: allocation.id,
     };
 
     // Mark teacher as busy
@@ -353,7 +486,7 @@ class TimetableGenerator {
   convertTimetableToEntries() {
     const entries = [];
 
-    this.classes.forEach(cls => {
+    this.classes.forEach((cls) => {
       for (let day = 1; day <= this.settings.numDayOrders; day++) {
         for (let hour = 1; hour <= this.settings.hoursPerDay; hour++) {
           const slot = this.timetable[cls.id][day][hour];
@@ -362,7 +495,7 @@ class TimetableGenerator {
             dayOrder: day,
             hour: hour,
             subjectId: slot ? slot.subjectId : null,
-            teacherId: slot ? slot.teacherId : null
+            teacherId: slot ? slot.teacherId : null,
           });
         }
       }
@@ -379,7 +512,7 @@ class TimetableGenerator {
     let filledSlots = 0;
     let preferredSlots = 0;
 
-    this.classes.forEach(cls => {
+    this.classes.forEach((cls) => {
       for (let day = 1; day <= this.settings.numDayOrders; day++) {
         for (let hour = 1; hour <= this.settings.hoursPerDay; hour++) {
           if (this.settings.breakHours.includes(hour)) {
@@ -389,10 +522,13 @@ class TimetableGenerator {
           const slot = this.timetable[cls.id][day][hour];
           if (slot) {
             filledSlots++;
-            
+
             // Check if slot matches teacher preferences
             const teacher = this.teacherMap.get(slot.teacherId);
-            if (teacher.preferredDayOrders && teacher.preferredDayOrders.includes(day)) {
+            if (
+              teacher.preferredDayOrders &&
+              teacher.preferredDayOrders.includes(day)
+            ) {
               preferredSlots++;
             }
           }
@@ -404,8 +540,11 @@ class TimetableGenerator {
       totalSlots,
       filledSlots,
       emptySlots: totalSlots - filledSlots,
-      utilizationRate: ((filledSlots / totalSlots) * 100).toFixed(2) + '%',
-      preferenceMatchRate: filledSlots > 0 ? ((preferredSlots / filledSlots) * 100).toFixed(2) + '%' : '0%'
+      utilizationRate: ((filledSlots / totalSlots) * 100).toFixed(2) + "%",
+      preferenceMatchRate:
+        filledSlots > 0
+          ? ((preferredSlots / filledSlots) * 100).toFixed(2) + "%"
+          : "0%",
     };
   }
 
@@ -422,32 +561,36 @@ class TimetableGenerator {
 
     // Check teacher clash - is teacher already busy at this time?
     const timetable = this.dbService.getTimetable();
-    const teacherConflict = timetable.find(entry => 
-      entry.teacher_id === teacherId &&
-      entry.day_order === dayOrder &&
-      entry.hour === hour &&
-      entry.class_id !== classId
+    const teacherConflict = timetable.find(
+      (entry) =>
+        entry.teacher_id === teacherId &&
+        entry.day_order === dayOrder &&
+        entry.hour === hour &&
+        entry.class_id !== classId
     );
 
     if (teacherConflict) {
       return {
         valid: false,
-        reason: `Teacher is already teaching ${teacherConflict.subject_name} in ${teacherConflict.class_name} at this time`
+        reason: `Teacher is already teaching ${teacherConflict.subject_name} in ${teacherConflict.class_name} at this time`,
       };
     }
 
     // Check teacher daily limit
-    const teacherDaySlots = timetable.filter(entry =>
-      entry.teacher_id === teacherId &&
-      entry.day_order === dayOrder &&
-      entry.subject_id !== null
+    const teacherDaySlots = timetable.filter(
+      (entry) =>
+        entry.teacher_id === teacherId &&
+        entry.day_order === dayOrder &&
+        entry.subject_id !== null
     );
 
-    const teacher = this.dbService.getTeachers().find(t => t.id === teacherId);
+    const teacher = this.dbService
+      .getTeachers()
+      .find((t) => t.id === teacherId);
     if (teacherDaySlots.length >= teacher.max_hours_per_day) {
       return {
         valid: false,
-        reason: `Teacher has reached maximum hours (${teacher.max_hours_per_day}) for this day`
+        reason: `Teacher has reached maximum hours (${teacher.max_hours_per_day}) for this day`,
       };
     }
 
@@ -462,13 +605,17 @@ class TimetableGenerator {
     const teachers = this.dbService.getTeachers();
     const workload = [];
 
-    teachers.forEach(teacher => {
-      const teacherSlots = timetable.filter(entry => entry.teacher_id === teacher.id);
-      
+    teachers.forEach((teacher) => {
+      const teacherSlots = timetable.filter(
+        (entry) => entry.teacher_id === teacher.id
+      );
+
       // Calculate daily hours
       const dailyHours = {};
       for (let day = 1; day <= (this.settings?.numDayOrders || 5); day++) {
-        dailyHours[day] = teacherSlots.filter(entry => entry.day_order === day).length;
+        dailyHours[day] = teacherSlots.filter(
+          (entry) => entry.day_order === day
+        ).length;
       }
 
       // Calculate weekly hours
@@ -480,7 +627,9 @@ class TimetableGenerator {
         weeklyHours,
         dailyHours,
         maxHoursPerDay: teacher.max_hours_per_day,
-        subjects: [...new Set(teacherSlots.map(s => s.subject_name).filter(Boolean))]
+        subjects: [
+          ...new Set(teacherSlots.map((s) => s.subject_name).filter(Boolean)),
+        ],
       });
     });
 
