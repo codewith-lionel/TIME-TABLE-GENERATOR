@@ -41,7 +41,7 @@
     "appId": "com.timetable.generator",
     "productName": "Timetable Generator",
     "win": {
-      "target": "nsis",
+      "target": ["portable", "zip"],
       "icon": "assets/icon.ico"
     },
     "files": [
@@ -49,7 +49,12 @@
       "preload.js",
       "renderer/**/*",
       "database/**/*",
-      "assets/**/*"
-    ]
+      "core/**/*",
+      "services/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    }
   }
 }
