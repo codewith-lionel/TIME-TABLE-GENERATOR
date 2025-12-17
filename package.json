@@ -41,7 +41,10 @@
     "appId": "com.timetable.generator",
     "productName": "Timetable Generator",
     "win": {
-      "target": ["portable", "zip"],
+      "target": [
+        "portable",
+        "zip"
+      ],
       "icon": "assets/icon.ico"
     },
     "files": [
